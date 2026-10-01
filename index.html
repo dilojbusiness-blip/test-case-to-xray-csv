@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Test Case Spreadsheet to Xray CSV Converter (Free, Private)</title>
+  <meta name="description" content="Convert an Excel or CSV list of test cases and steps into a CSV ready for Xray Test Case Importer in Jira. Runs in your browser; your file is never uploaded.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b5fff'/%3E%3Cpath d='M8 17l5 5 11-12' stroke='white' stroke-width='3.5' fill='none'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>Test Case Spreadsheet to Xray CSV</h1>
+    <p class="lead">Turn a spreadsheet of test cases and steps into a CSV for Xray's Test Case Importer in Jira. Everything runs in your browser. Your file is never uploaded.</p>
+
+    <section id="step1" aria-labelledby="h-load">
+      <h2 id="h-load">1. Load your file</h2>
+      <label class="drop" id="drop" for="file">
+        <span>Drop a <b>.csv</b> file here, or click to choose</span>
+        <input type="file" id="file" accept=".csv,.tsv,.txt,text/csv">
+      </label>
+      <p class="hint">In Excel, use File &rarr; Save As &rarr; CSV first. Or paste cells copied from Excel or Google Sheets:</p>
+      <textarea id="paste" rows="4" placeholder="Paste copied cells here (include the header row)" spellcheck="false"></textarea>
+      <p><button type="button" id="loadPaste">Use pasted data</button> <button type="button" id="loadSample" class="secondary">Try sample data</button></p>
+    </section>
+
+    <section id="step2" hidden aria-labelledby="h-map">
+      <h2 id="h-map">2. Match your columns</h2>
+      <p class="hint">Columns were guessed from the header names. Fix any that are wrong. Rows with a blank test name continue the test above them.</p>
+      <div id="mapping" class="mapping"></div>
+      <label class="inline">Test type <input id="testType" value="Manual"></label>
+      <label class="inline">Delimiter
+        <select id="outDelim"><option value=",">Comma ,</option><option value=";">Semicolon ;</option></select>
+      </label>
+    </section>
+
+    <section id="step3" hidden aria-labelledby="h-out">
+      <h2 id="h-out">3. Check and download</h2>
+      <p id="summary" role="status"></p>
+      <ul id="warnings" class="warnings"></ul>
+      <div class="tablewrap"><table id="preview"></table></div>
+      <p><button type="button" id="download">Download Xray CSV</button></p>
+      <p class="hint">In Jira: Apps &rarr; Xray &rarr; Test Case Importer &rarr; CSV. Map Test ID, Summary and Test Type, plus the Xray Test Step fields Action, Data and Expected Result. Xray imports up to 1000 issues per run.</p>
+    </section>
+
+    <p id="error" role="alert" class="error" hidden></p>
+
+    <section class="faq" aria-labelledby="h-faq">
+      <h2 id="h-faq">Questions</h2>
+      <h3>How do I import test cases from Excel into Xray?</h3>
+      <p>Save your sheet as CSV (or paste the cells), load it here, match the columns, and download the result. Then open Jira, go to Apps, Xray, Test Case Importer, and choose CSV. Map Test ID, Summary and Test Type, and map Action, Data and Expected Result to the Xray test step fields.</p>
+      <h3>What should my spreadsheet look like?</h3>
+      <p>One row per step. Put the test name on the first row of each test and leave it blank on the following step rows. Columns can be in any order and named anything; you pick them in step 2.</p>
+      <h3>Is my data uploaded anywhere?</h3>
+      <p>No. The conversion runs entirely in your browser and nothing is sent to a server. Do not paste anything your company forbids you from handling outside approved tools.</p>
+      <h3>Does it work with Zephyr?</h3>
+      <p>Not yet. The output follows Xray's Test Case Importer layout only.</p>
+    </section>
+  </main>
+  <footer>Not affiliated with Atlassian or Xray. Always import a small batch first to check the mapping.</footer>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

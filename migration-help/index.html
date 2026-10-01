@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Custom Xray Test Migration Pilot | Private Spreadsheet Conversion</title>
+  <meta name="description" content="Discuss a small Xray migration pilot for unusual Excel and CSV test-case layouts. Anonymized samples, explicit field mapping and complete-test export batches. No Jira credentials requested.">
+  <link rel="canonical" href="https://dilojbusiness-blip.github.io/test-case-to-xray-csv/migration-help/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Custom Xray test migration pilot">
+  <meta property="og:description" content="An unusual spreadsheet? Start with a small, authorized pilot before agreeing any paid migration work.">
+  <meta property="og:url" content="https://dilojbusiness-blip.github.io/test-case-to-xray-csv/migration-help/">
+  <meta name="twitter:card" content="summary">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <main>
+    <nav aria-label="Tools"><a href="../">Spreadsheet converter</a> · <a href="../gherkin-to-csv/">Gherkin converter</a></nav>
+    <h1>Spreadsheet does not fit the free converter?</h1>
+    <p class="lead">Discuss a custom Xray migration pilot by email. Start with a small anonymized example, not your entire test library.</p>
+    <p class="notice"><strong>Pilot enquiries only.</strong> A real Xray import has not yet been verified. No payment is collected here, and compatibility, delivery time and pricing are not promised in advance.</p>
+
+    <section class="service-card" aria-labelledby="scope">
+      <h2 id="scope">Proposed deliverables</h2>
+      <ul>
+        <li>A source-to-Xray column mapping, including what is excluded.</li>
+        <li>A synthetic or anonymized pilot CSV for a few complete tests.</li>
+        <li>If the pilot succeeds: a scoped quote for custom conversion, numbered batches and a row/test/step-count reconciliation.</li>
+        <li>A local conversion workflow where practical, so approved data need not be sent to this website.</li>
+      </ul>
+      <p>We prepare import files. We do not promise to import into your production Jira, set project permissions or handle credentials. Required custom fields and unusual Xray configurations need a separate agreed scope.</p>
+    </section>
+
+    <section class="service-card" aria-labelledby="pilot">
+      <h2 id="pilot">Validate first, then decide</h2>
+      <ol>
+        <li>Describe the layout, approximate test count, Xray edition and target requirements. Send column names only at first.</li>
+        <li>If an example is needed, provide 2–5 anonymized tests only after confirming you are authorized to share them.</li>
+        <li>Import the pilot in an approved disposable sandbox and compare names, steps, data and expected results. <a href="../samples/pilot-xray.csv" download>Start with our synthetic pilot CSV</a>.</li>
+        <li>Confirm the pilot result before agreeing a fixed scope, payment method, price, revision limit and acceptance criteria.</li>
+      </ol>
+      <p>Do not use employer accounts or data without authorization. Use an account and sandbox you control. Never email passwords, API tokens, customer records, proprietary logs or complete production exports.</p>
+    </section>
+
+    <section class="service-card" aria-labelledby="enquire">
+      <h2 id="enquire">Prepare an enquiry</h2>
+      <p>This form creates an email draft on your device. It does not submit to a server, upload files or send mail automatically. Written contact is sufficient; no sales call is required.</p>
+      <form id="enquiry" class="service-form">
+        <label>Xray edition
+          <select id="edition"><option>Not sure</option><option>Xray Cloud</option><option>Xray Data Center</option></select>
+        </label>
+        <label>Approximate number of tests
+          <input id="count" type="number" min="1" max="1000000" inputmode="numeric" required aria-describedby="formStatus">
+        </label>
+        <label>What does not fit? Column names or layout description only.
+          <textarea id="layout" rows="5" minlength="10" maxlength="2000" required aria-describedby="formStatus" placeholder="For example: each test uses one row with three numbered step columns."></textarea>
+        </label>
+        <button type="submit">Create email draft</button>
+        <p id="formStatus" role="status"></p>
+        <a id="draft" class="button-link" hidden>Open draft in email app</a>
+        <label id="fallbackLabel" hidden>Draft text to copy if no email app opens
+          <textarea id="fallback" rows="8" readonly></textarea>
+        </label>
+      </form>
+      <p>Email: <a href="mailto:dilojbusiness@gmail.com">dilojbusiness@gmail.com</a>. Response time is not guaranteed.</p>
+      <noscript><p>JavaScript is disabled. Email the address above with your edition, test count and layout description.</p></noscript>
+    </section>
+
+    <section class="faq" aria-labelledby="privacy">
+      <h2 id="privacy">Privacy and limitations</h2>
+      <p>The converters and enquiry builder run locally in your browser. This site does not store your pasted data or track conversion activity. GitHub Pages may process ordinary request logs to host the website.</p>
+      <p>If you choose to email an enquiry, its contents are sent through your mail provider and received in our Gmail inbox. Do not include sensitive data. Discuss permitted data handling and retention before sharing any work sample; a local converter is preferable for confidential inputs.</p>
+      <p>Zephyr output is experimental and real Xray compatibility is unverified. Preflight checks file structure only. No claim of Xray certification, guaranteed imports, guaranteed savings or guaranteed income is made.</p>
+    </section>
+  </main>
+  <footer>Independent tool; not affiliated with Atlassian, Xray or SmartBear.</footer>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

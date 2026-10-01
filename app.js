@@ -1,6 +1,7 @@
 import { detectDelimiter, parseDelimited, toCsv } from "./csv.js";
 import { FIELDS, guessMapping, groupTests, buildXrayRows, OUTPUT_HEADERS, buildZephyrRows, ZEPHYR_HEADERS } from "./convert.js";
 import { readXlsx } from "./xlsx.js";
+import { inspectTests, inspectMapping, splitTests, XRAY_BATCH_SIZE } from "./preflight.js";
 
 const $ = (id) => document.getElementById(id);
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -19,20 +20,45 @@ let table = { headers: [], rows: [] };
 let mapping = {};
 let output = "";
 let headers = OUTPUT_HEADERS;
+let batches = [];
+let ready = false;
+let loadVersion = 0;
+
+function reset() {
+  table = { headers: [], rows: [] };
+  mapping = {};
+  ready = false;
+  output = "";
+  batches = [];
+  $("download").disabled = true;
+  $("step2").hidden = true;
+  $("step3").hidden = true;
+  $("preview").replaceChildren();
+  $("warnings").replaceChildren();
+}
 
 function showError(msg) {
   const el = $("error");
   el.textContent = msg;
   el.hidden = !msg;
+  $("paste").setAttribute("aria-invalid", String(Boolean(msg)));
 }
 
 function loadText(text) {
-  loadRows(parseDelimited(text, detectDelimiter(text)));
+  loadVersion++;
+  reset();
+  try {
+    if (new Blob([text]).size > MAX_BYTES) throw new Error("Input exceeds 10 MB. Split it and try again.");
+    loadRows(parseDelimited(text, detectDelimiter(text)));
+  } catch (e) {
+    showError(e.message);
+  }
 }
 
 function loadRows(parsed) {
   showError("");
   if (parsed.length < 2) {
+    reset();
     showError("Need a header row and at least one data row.");
     return;
   }
@@ -64,27 +90,56 @@ function renderMapping() {
 }
 
 function update() {
-  const missing = FIELDS.filter((f) => f.required && mapping[f.key] < 0).map((f) => f.label);
+  if (!table.rows.length) return;
+  ready = false;
+  output = "";
+  $("download").disabled = true;
+  const missing = FIELDS.filter((f) => f.required && !(mapping[f.key] >= 0)).map((f) => f.label);
   $("step3").hidden = missing.length > 0;
   if (missing.length) {
+    ready = false;
     showError(`Choose a column for: ${missing.join(", ")}.`);
     return;
   }
   showError("");
 
-  const { tests, warnings } = groupTests(table.rows, mapping);
+  const { tests, warnings, errors } = groupTests(table.rows, mapping);
+  const preflight = inspectTests(tests);
+  preflight.errors.push(...errors, ...inspectMapping(mapping, table.headers));
+  if ($("outFormat").value === "xray" && !$("testType").value.trim()) preflight.errors.push("Enter the manual test type configured in Xray.");
+  batches = splitTests(tests);
+  ready = tests.length > 0 && preflight.errors.length === 0;
   const zephyr = $("outFormat").value === "zephyr";
   $("testType").closest("label").hidden = zephyr;
   headers = zephyr ? ZEPHYR_HEADERS : OUTPUT_HEADERS;
-  const outRows = zephyr ? buildZephyrRows(tests) : buildXrayRows(tests, $("testType").value.trim() || "Manual");
-  output = toCsv([headers, ...outRows], $("outDelim").value);
+  $("download").textContent = zephyr ? "Download Zephyr CSV" : "Download Xray CSV";
+  $("importHint").textContent = zephyr
+    ? "Zephyr Scale output is experimental and has not been checked against a real import. In Zephyr's CSV wizard, map the columns yourself and test a small sample before importing each numbered part."
+    : "In Jira: Apps → Xray → Test Case Importer → CSV. Map Test ID, Summary and Test Type, plus the Xray Test Step fields Action, Data and Expected Result. Import each numbered part separately; start with a small sample to verify your instance's mapping. Unmapped source columns are not exported.";
+  const batchSelect = $("batch");
+  const selected = Number(batchSelect.value) || 0;
+  batchSelect.replaceChildren(...batches.map((batch, i) =>
+    new Option(`Part ${i + 1} of ${batches.length} (tests ${i * XRAY_BATCH_SIZE + 1}–${i * XRAY_BATCH_SIZE + batch.length})`, String(i))));
+  batchSelect.value = String(Math.min(selected, batches.length - 1));
+  $("batchChoice").hidden = batches.length < 2;
+  $("download").disabled = !ready;
+  renderBatch();
 
   const stepCount = tests.reduce((n, t) => n + t.steps.length, 0);
-  $("summary").textContent = `${tests.length} tests, ${stepCount} steps.` + (tests.length > 1000 ? " Xray imports at most 1000 issues per run; split the file." : "");
+  $("summary").textContent = `${tests.length} tests, ${stepCount} steps. ${preflight.errors.length} blocking issues, ${warnings.length + preflight.warnings.length} warnings.` + (batches.length > 1 ? ` Download ${batches.length} parts separately (${XRAY_BATCH_SIZE} tests maximum per part).` : "");
 
-  const ul = $("warnings");
-  ul.replaceChildren(...warnings.slice(0, 20).map((w) => Object.assign(document.createElement("li"), { textContent: w })));
+  const issues = [...preflight.errors, ...warnings, ...preflight.warnings];
+  $("paste").setAttribute("aria-invalid", String(!ready));
+  $("warnings").replaceChildren(...issues.slice(0, 20).map((w) => Object.assign(document.createElement("li"), { textContent: w })));
+  $("moreIssues").textContent = issues.length > 20 ? `Showing 20 of ${issues.length} issues. Fix the source and reload to check the rest.` : "";
+  if (!tests.length) showError("No tests found. Check that a test name appears in the mapped column.");
+}
 
+function renderBatch() {
+  const tests = batches[Number($("batch").value)] ?? [];
+  const zephyr = $("outFormat").value === "zephyr";
+  const outRows = zephyr ? buildZephyrRows(tests) : buildXrayRows(tests, $("testType").value.trim() || "Manual");
+  output = ready ? toCsv([headers, ...outRows], $("outDelim").value) : "";
   renderPreview(outRows);
 }
 
@@ -102,23 +157,22 @@ function renderPreview(rows) {
 
 async function loadFile(file) {
   if (!file) return;
-  if (file.size > MAX_BYTES) {
-    showError("File is larger than 10 MB. Split it and try again.");
-    return;
-  }
-  if (/\.xls$/i.test(file.name)) {
-    showError("Old .xls files are not supported. In Excel use Save As > .xlsx or CSV, or paste the cells below.");
-    return;
-  }
-  if (/\.xlsx$/i.test(file.name)) {
-    try {
-      loadRows(await readXlsx(await file.arrayBuffer()));
-    } catch (e) {
-      showError(`Could not read this Excel file (${e.message}). Try Save As CSV, or paste the cells.`);
+  const version = ++loadVersion;
+  reset();
+  showError("");
+  try {
+    if (file.size > MAX_BYTES) throw new Error("File exceeds 10 MB. Split it and try again.");
+    if (!/\.(xlsx|csv|tsv|txt)$/i.test(file.name)) throw new Error("Use .xlsx, .csv, .tsv or .txt. Old .xls is not supported.");
+    let rows;
+    if (/\.xlsx$/i.test(file.name)) rows = await readXlsx(await file.arrayBuffer());
+    else {
+      const text = await file.text();
+      rows = parseDelimited(text, detectDelimiter(text));
     }
-    return;
+    if (version === loadVersion) loadRows(rows);
+  } catch (e) {
+    if (version === loadVersion) showError(`Could not load file: ${e.message}`);
   }
-  loadText(await file.text());
 }
 
 $("file").addEventListener("change", (e) => loadFile(e.target.files[0]));
@@ -138,20 +192,25 @@ drop.addEventListener("drop", (e) => {
 $("loadPaste").addEventListener("click", () => {
   const v = $("paste").value;
   if (v.trim()) loadText(v);
-  else showError("Paste some cells first.");
+  else { loadVersion++; reset(); showError("Paste some cells first."); }
 });
 $("loadSample").addEventListener("click", () => {
   $("paste").value = SAMPLE;
   loadText(SAMPLE);
 });
 $("testType").addEventListener("input", () => table.rows.length && update());
+$("paste").addEventListener("input", () => { loadVersion++; reset(); showError("Input changed. Select Use pasted data to convert it."); });
 $("outDelim").addEventListener("change", () => table.rows.length && update());
 $("outFormat").addEventListener("change", () => table.rows.length && update());
+$("batch").addEventListener("change", renderBatch);
 
 $("download").addEventListener("click", () => {
+  if (!ready || !output) return;
   // BOM so Excel reads UTF-8 correctly.
   const blob = new Blob(["\uFEFF", output], { type: "text/csv;charset=utf-8" });
-  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: $("outFormat").value === "zephyr" ? "zephyr-import.csv" : "xray-import.csv", hidden: true });
+  const base = $("outFormat").value === "zephyr" ? "zephyr-import" : "xray-import";
+  const suffix = batches.length > 1 ? `-part-${String(Number($("batch").value) + 1).padStart(2, "0")}-of-${String(batches.length).padStart(2, "0")}` : "";
+  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `${base}${suffix}.csv`, hidden: true });
   document.body.append(a);
   a.click();
   // Revoking synchronously can abort the download in some browsers.

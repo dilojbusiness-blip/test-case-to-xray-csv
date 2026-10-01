@@ -26,7 +26,8 @@
         <input type="file" id="file" accept=".feature,.txt,text/plain">
       </label>
       <p class="hint">Or paste the text:</p>
-      <textarea id="source" rows="10" placeholder="Feature: ..." spellcheck="false"></textarea>
+      <label for="source">Feature text</label>
+      <textarea id="source" rows="10" aria-describedby="error" placeholder="Feature: ..." spellcheck="false"></textarea>
       <p><button type="button" id="loadSample" class="secondary">Try sample data</button></p>
     </section>
 
@@ -46,10 +47,16 @@
         <label class="check"><input type="checkbox" id="background" checked> Add Background steps to every test</label>
       </div>
       <p id="summary" role="status"></p>
+      <h3>Import preflight</h3>
+      <p class="hint">Blocking issues disable download; warnings need review. This checks the file structure, not the settings in your Jira instance.</p>
       <ul id="warnings" class="warnings"></ul>
+      <p id="moreIssues" class="hint"></p>
+      <label id="batchChoice" class="inline" hidden>Download part
+        <select id="batch"></select>
+      </label>
       <div class="tablewrap"><table id="preview"></table></div>
       <p><button type="button" id="download">Download CSV</button></p>
-      <p class="hint">Tags become labels separated by <code>;</code>, so choose <code>;</code> as the list value delimiter in Xray's Setup step. In Jira: Apps &rarr; Xray &rarr; Test Case Importer &rarr; CSV, then map Test ID, Summary, Test Type and the Xray test step fields Action, Data and Expected Result.</p>
+      <p class="hint">Tags become labels separated by <code>;</code>, so choose <code>;</code> as the list value delimiter in Xray's Setup step. In Jira: Apps &rarr; Xray &rarr; Test Case Importer &rarr; CSV, then map Test ID, Summary, Test Type and the Xray test step fields Action, Data and Expected Result. Import numbered parts separately, starting with a small sample.</p>
     </section>
 
     <p id="error" role="alert" class="error" hidden></p>
@@ -66,6 +73,8 @@
       <p>No. Xray can import feature files as Cucumber tests. This tool is for teams that want plain manual tests with steps, or that use Zephyr, from feature files.</p>
       <h3>Is the Zephyr output verified?</h3>
       <p>Not yet. It is experimental and follows Zephyr's documented CSV fields. Try a small batch first.</p>
+      <h3>What are the parser limits?</h3>
+      <p>One English Feature per file and at most 10,000 expanded tests. Rule-scoped Backgrounds and translated keywords are not supported and block export. Review all warnings: this is a focused converter, not a complete Gherkin validator. <a href="../migration-help/">Ask about a custom migration pilot</a> if your layout is unsupported.</p>
     </section>
   </main>
   <footer>Not affiliated with Atlassian, Xray, SmartBear or Cucumber. Always import a small batch first to check the mapping.</footer>

@@ -35,24 +35,27 @@ export function guessMapping(headers) {
   return mapping;
 }
 
-const cell = (row, idx) => (idx >= 0 ? (row[idx] ?? "").trim() : "");
+const cell = (row, idx) => (idx >= 0 ? String(row[idx] ?? "") : "");
 
-// A new test starts when the name cell is non-empty and differs from the current test's name.
+// A non-empty name starts a new test, even if it repeats the previous name.
+// Continuation step rows must have a blank name cell.
 export function groupTests(dataRows, mapping) {
   const tests = [];
   const warnings = [];
+  const errors = [];
   let current = null;
 
   dataRows.forEach((row, i) => {
-    const name = cell(row, mapping.name);
+    const name = cell(row, mapping.name).trim();
     const step = cell(row, mapping.step);
     const data = cell(row, mapping.data);
     const expected = cell(row, mapping.expected);
 
-    if (name && (!current || name !== current.name)) {
+    if (name) {
       current = {
         id: `T${tests.length + 1}`,
         name,
+        sourceRow: i + 1,
         labels: cell(row, mapping.labels),
         priority: cell(row, mapping.priority),
         description: cell(row, mapping.description),
@@ -61,19 +64,22 @@ export function groupTests(dataRows, mapping) {
       tests.push(current);
     }
     if (!current) {
-      warnings.push(`Row ${i + 2}: no test name above it, skipped.`);
+      errors.push(`Data row ${i + 1}: no test name above it. Add a name; this row cannot be exported.`);
       return;
     }
-    if (step || data || expected) {
-      current.steps.push({ action: step, data, expected });
+    if (!name) {
+      for (const key of ["labels", "priority", "description"]) {
+        const value = cell(row, mapping[key]);
+        if (value.trim() && value !== current[key]) {
+          errors.push(`Data row ${i + 1}: ${key} differs from the first row. Move it to the test's first row or give this row a test name.`);
+        }
+      }
+    }
+    if (step.trim() || data.trim() || expected.trim()) {
+      current.steps.push({ action: step, data, expected, sourceRow: i + 1 });
     }
   });
-
-  for (const t of tests) {
-    if (t.steps.length === 0) warnings.push(`"${t.name}" has no steps.`);
-    if (t.steps.some((s) => !s.action)) warnings.push(`"${t.name}" has a step with an empty action (Xray requires one).`);
-  }
-  return { tests, warnings };
+  return { tests, warnings, errors };
 }
 
 export const OUTPUT_HEADERS = ["Test ID", "Summary", "Test Type", "Labels", "Priority", "Description", "Action", "Data", "Expected Result"];

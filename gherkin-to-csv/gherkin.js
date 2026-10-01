@@ -18,6 +18,7 @@ export function parseFeature(text) {
   const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/);
   const feature = { name: "", tags: [], background: [], scenarios: [] };
   const warnings = [];
+  const errors = [];
 
   let pendingTags = [];
   let current = null; // scenario being filled
@@ -26,6 +27,10 @@ export function parseFeature(text) {
   let lastStep = null;
   let examples = null; // { header, rows }
   let doc = null; // docstring lines being collected
+  let docDelimiter = "";
+  let docIndent = 0;
+  let featureSeen = false;
+  let backgroundSeen = false;
 
   const target = () => (inBackground ? feature.background : current?.steps);
 
@@ -33,18 +38,22 @@ export function parseFeature(text) {
     const line = raw.trim();
 
     if (doc) {
-      if (line === '"""' || line === "```") {
+      if (line === docDelimiter) {
         if (lastStep) lastStep.data = [lastStep.data, doc.join("\n")].filter(Boolean).join("\n");
         doc = null;
       } else {
-        doc.push(line);
+        doc.push(raw.slice(Math.min(docIndent, raw.length - raw.trimStart().length)));
       }
       continue;
     }
+    if (/^#\s*language\s*:/i.test(line) && !/^#\s*language\s*:\s*en\s*$/i.test(line)) errors.push("Only English Gherkin keywords are supported.");
     if (!line || line.startsWith("#")) continue;
 
-    if (line === '"""' || line === "```") {
+    if (/^("""|```)/.test(line)) {
+      if (!lastStep) errors.push("Docstring without a preceding step.");
       doc = [];
+      docDelimiter = line.slice(0, 3);
+      docIndent = raw.length - raw.trimStart().length;
       continue;
     }
     if (line.startsWith("@")) {
@@ -54,12 +63,16 @@ export function parseFeature(text) {
 
     let m;
     if ((m = line.match(FEATURE))) {
+      if (featureSeen) errors.push("Use one Feature per file.");
+      featureSeen = true;
       feature.name = m[1].trim();
       feature.tags = pendingTags;
       pendingTags = [];
       continue;
     }
     if (BACKGROUND.test(line)) {
+      if (backgroundSeen || feature.scenarios.length) errors.push("Only one feature-level Background before the scenarios is supported.");
+      backgroundSeen = true;
       inBackground = true;
       current = null;
       examples = null;
@@ -86,10 +99,10 @@ export function parseFeature(text) {
     }
     if (EXAMPLES.test(line)) {
       if (!current) {
-        warnings.push("Examples block found before any scenario; ignored.");
+        errors.push("Examples block found before any scenario.");
         continue;
       }
-      examples = { header: null, rows: [] };
+      examples = { header: null, rows: [], tags: pendingTags };
       current.examples.push(examples);
       pendingTags = [];
       continue;
@@ -97,11 +110,14 @@ export function parseFeature(text) {
     if (line.startsWith("|")) {
       const cells = splitRow(line);
       if (examples) {
-        if (!examples.header) examples.header = cells;
-        else examples.rows.push(Object.fromEntries(examples.header.map((h, i) => [h, cells[i] ?? ""])));
+        if (!examples.header) {
+          examples.header = cells;
+          if (cells.some(c => !c) || new Set(cells).size !== cells.length) errors.push("Examples headers must be non-empty and unique.");
+        } else if (cells.length !== examples.header.length) errors.push("Examples row has the wrong number of cells.");
+        else examples.rows.push(Object.fromEntries(examples.header.map((h, i) => [h, cells[i]])));
       } else if (lastStep) {
         lastStep.data = [lastStep.data, cells.join(" | ")].filter(Boolean).join("\n");
-      }
+      } else errors.push("Data table without a preceding step or Examples block.");
       continue;
     }
     if ((m = line.match(STEP))) {
@@ -110,7 +126,7 @@ export function parseFeature(text) {
       if (["given", "when", "then"].includes(lower)) lastType = lower;
       const list = target();
       if (!list) {
-        warnings.push(`Step outside a scenario skipped: "${line}"`);
+        errors.push(`Step outside a scenario: "${line}"`);
         continue;
       }
       lastStep = { kw, type: lastType, text: m[2].trim(), data: "" };
@@ -118,10 +134,11 @@ export function parseFeature(text) {
       examples = null;
       continue;
     }
-    // Free text (feature description, Rule:, etc.) is ignored on purpose.
+    if (/^Rule\s*:/i.test(line)) errors.push("Rule-scoped Gherkin is not supported. Split rules into separate feature files.");
   }
-  if (doc) warnings.push("A docstring was never closed; its content was ignored.");
-  return { feature, warnings };
+  if (doc) errors.push("A docstring was never closed.");
+  if (!featureSeen) errors.push("A Feature header is required.");
+  return { feature, warnings, errors };
 }
 
 const fill = (s, row) => s.replace(/<([^<>]+)>/g, (m, k) => (k in row ? row[k] : m));
@@ -147,12 +164,13 @@ export function buildTests({ feature }, opts) {
   };
 
   const add = (name, tags, steps) => {
+    if (tests.length >= 10000) throw new Error("Limit is 10000 expanded tests. Split the source file.");
     tests.push({ id: `T${tests.length + 1}`, name, labels: tags.join(";"), priority: "", description: feature.name, steps: toSteps(steps) });
   };
 
   for (const sc of feature.scenarios) {
     const steps = [...(opts.background ? feature.background : []), ...sc.steps];
-    const rows = sc.examples.flatMap((e) => e.rows);
+    const rows = sc.examples.flatMap((e) => e.rows.map(row => ({ row, tags: e.tags })));
     if (sc.steps.length === 0) warnings.push(`Scenario "${sc.name}" has no steps.`);
 
     if (sc.outline && opts.expand) {
@@ -161,9 +179,11 @@ export function buildTests({ feature }, opts) {
         add(sc.name, sc.tags, steps);
         continue;
       }
-      rows.forEach((row, i) => {
+      rows.forEach(({ row, tags }, i) => {
+        const needed = [sc.name, ...steps.flatMap(s => [s.text, s.data])].join("\n").matchAll(/<([^<>]+)>/g);
+        for (const match of needed) if (!Object.hasOwn(row, match[1])) warnings.push(`Outline "${sc.name}": missing Examples column "${match[1]}".`);
         const name = fill(sc.name, row);
-        add(name === sc.name ? `${sc.name} (example ${i + 1})` : name, sc.tags, steps.map((s) => ({ ...s, text: fill(s.text, row), data: fill(s.data, row) })));
+        add(name === sc.name ? `${sc.name} (example ${i + 1})` : name, [...sc.tags, ...(tags ?? [])], steps.map((s) => ({ ...s, text: fill(s.text, row), data: fill(s.data, row) })));
       });
     } else {
       add(sc.name, sc.tags, steps);

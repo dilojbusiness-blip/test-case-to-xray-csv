@@ -18,6 +18,7 @@ export function parseDelimited(text, delimiter) {
   let row = [];
   let field = "";
   let inQuotes = false;
+  let closedQuote = false;
   const src = text.replace(/^\uFEFF/, "");
 
   for (let i = 0; i < src.length; i++) {
@@ -29,30 +30,42 @@ export function parseDelimited(text, delimiter) {
           i++;
         } else {
           inQuotes = false;
+          closedQuote = true;
         }
       } else {
         field += ch;
       }
+    } else if (closedQuote && ch !== delimiter && ch !== "\n" && ch !== "\r") {
+      throw new Error("Unexpected text after a closing quote. Check the CSV quoting.");
     } else if (ch === '"' && field === "") {
       inQuotes = true;
+    } else if (ch === '"') {
+      throw new Error("Quote inside an unquoted cell. Enclose the entire cell in quotes.");
     } else if (ch === delimiter) {
       row.push(field);
       field = "";
+      closedQuote = false;
     } else if (ch === "\n" || ch === "\r") {
       if (ch === "\r" && src[i + 1] === "\n") i++;
       row.push(field);
       rows.push(row);
       row = [];
       field = "";
+      closedQuote = false;
     } else {
       field += ch;
     }
   }
-  if (field !== "" || row.length > 0) {
+  if (inQuotes) throw new Error("Unclosed quoted cell. No data was converted.");
+  if (field !== "" || row.length > 0 || closedQuote) {
     row.push(field);
     rows.push(row);
   }
-  return rows.filter((r) => r.some((cell) => cell.trim() !== ""));
+  const nonempty = rows.filter((r) => r.some((cell) => cell.trim() !== ""));
+  const width = nonempty[0]?.length;
+  const mismatch = nonempty.findIndex((r) => r.length !== width);
+  if (mismatch >= 0) throw new Error(`Record ${mismatch + 1} has ${nonempty[mismatch].length} cells; expected ${width}. Check the delimiter and quoting.`);
+  return nonempty;
 }
 
 export function toCsv(rows, delimiter = ",") {

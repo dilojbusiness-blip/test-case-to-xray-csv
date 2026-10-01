@@ -20,6 +20,7 @@
   <main>
     <h1>Test Case Spreadsheet to Xray CSV</h1>
     <p class="lead">Turn a spreadsheet of test cases and steps into a CSV for Xray's Test Case Importer in Jira. Everything runs in your browser. Your file is never uploaded.</p>
+    <p class="notice">Unusual spreadsheet layout? <a href="migration-help/">Ask about a custom Xray migration pilot</a>. Real Xray imports remain unverified; no paid checkout is available yet.</p>
 
     <section id="step1" aria-labelledby="h-load">
       <h2 id="h-load">1. Load your file</h2>
@@ -28,13 +29,15 @@
         <input type="file" id="file" accept=".xlsx,.csv,.tsv,.txt,text/csv">
       </label>
       <p class="hint">Only the first sheet of an Excel file is read. Or paste cells copied from Excel or Google Sheets:</p>
-      <textarea id="paste" rows="4" placeholder="Paste copied cells here (include the header row)" spellcheck="false"></textarea>
+      <label for="paste">Spreadsheet cells</label>
+      <textarea id="paste" rows="4" aria-describedby="error" placeholder="Paste copied cells here (include the header row)" spellcheck="false"></textarea>
       <p><button type="button" id="loadPaste">Use pasted data</button> <button type="button" id="loadSample" class="secondary">Try sample data</button></p>
     </section>
 
     <section id="step2" hidden aria-labelledby="h-map">
       <h2 id="h-map">2. Match your columns</h2>
       <p class="hint">Columns were guessed from the header names. Fix any that are wrong. Rows with a blank test name continue the test above them.</p>
+      <p class="hint">Only mapped columns are exported. Test type must be the manual type configured in your Xray project. These tools do not create Jira issues or check project permissions and required custom fields.</p>
       <div id="mapping" class="mapping"></div>
       <label class="inline">Output for
         <select id="outFormat"><option value="xray">Xray (Test Case Importer)</option><option value="zephyr">Zephyr Scale (not yet verified)</option></select>
@@ -50,6 +53,7 @@
       <p id="summary" role="status"></p>
       <h3>Import preflight</h3>
       <p class="hint">Blocking issues disable download; warnings need review. This checks the file structure, not the settings in your Jira instance.</p>
+      <p class="hint">Up to 10,000 tests per conversion, with at most 1,000 per export part. Each test stays together. <a href="samples/pilot-xray.csv" download>Download a synthetic two-test Xray pilot</a> to check your import mapping in an authorized sandbox.</p>
       <ul id="warnings" class="warnings"></ul>
       <p id="moreIssues" class="hint"></p>
       <label id="batchChoice" class="inline" hidden>Download part
@@ -57,7 +61,7 @@
       </label>
       <div class="tablewrap"><table id="preview"></table></div>
       <p><button type="button" id="download">Download Xray CSV</button></p>
-      <p class="hint">In Jira: Apps &rarr; Xray &rarr; Test Case Importer &rarr; CSV. Map Test ID, Summary and Test Type, plus the Xray Test Step fields Action, Data and Expected Result. Import each numbered part separately; start with a small sample to verify your instance's mapping.</p>
+      <p id="importHint" class="hint">In Jira: Apps &rarr; Xray &rarr; Test Case Importer &rarr; CSV. Map Test ID, Summary and Test Type, plus the Xray Test Step fields Action, Data and Expected Result. Import each numbered part separately; start with a small sample to verify your instance's mapping.</p>
     </section>
 
     <p id="error" role="alert" class="error" hidden></p>
@@ -73,7 +77,7 @@
       <h3>Does it work with Zephyr?</h3>
       <p>There is an experimental Zephyr Scale output (Name, Objective, Priority, Labels, Step, Test Data, Expected Result). It has not been tested against a real Zephyr import yet. In Zephyr's wizard you map the columns yourself, and steps for one test are written on consecutive rows. Please try a small batch first.</p>
       <h3>Can I upload an .xlsx file?</h3>
-      <p>Yes, the first sheet of a modern .xlsx file is read in your browser. Old .xls files are not supported; save them as .xlsx or CSV first.</p>
+      <p>Yes, the first sheet of a modern .xlsx file is read in your browser. Old .xls files are not supported; save them as .xlsx or CSV first. Unmerge cells before loading. Formatting, formatted dates and leading zeroes in numeric cells are not preserved; use text cells or paste values. Formula results must already be calculated and saved. Limits: 10 MB file size, 50 MB unpacked workbook, 200,000 populated cells.</p>
       <h3>Example layout</h3>
       <pre>Test Case Name | Step Description | Test Data | Expected Result
 Login ok       | Open login page  |           | Form is shown

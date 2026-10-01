@@ -1,0 +1,4 @@
+Test ID,Summary,Test Type,Labels,Priority,Description,Action,Data,Expected Result
+PILOT1,Synthetic migration pilot one,Manual,,,Synthetic data only,Open the sample page,,Sample page is displayed
+PILOT1,,,,,,Select the sample button,,Sample result is displayed
+PILOT2,Synthetic migration pilot two,Manual,,,Synthetic data only,Enter sample text,example,Sample text is accepted

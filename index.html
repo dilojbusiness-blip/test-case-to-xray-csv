@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-site-verification" content="wtpDks--QZWqXfqbZxi4zvSfz_Mt5iW1OO6Ii5Q9xpw">
   <title>Test Case Spreadsheet to Xray CSV Converter (Free, Private)</title>
   <meta name="description" content="Convert an Excel or CSV list of test cases and steps into a CSV ready for Xray Test Case Importer in Jira. Runs in your browser; your file is never uploaded.">
   <link rel="canonical" href="https://dilojbusiness-blip.github.io/test-case-to-xray-csv/">
@@ -47,10 +48,16 @@
     <section id="step3" hidden aria-labelledby="h-out">
       <h2 id="h-out">3. Check and download</h2>
       <p id="summary" role="status"></p>
+      <h3>Import preflight</h3>
+      <p class="hint">Blocking issues disable download; warnings need review. This checks the file structure, not the settings in your Jira instance.</p>
       <ul id="warnings" class="warnings"></ul>
+      <p id="moreIssues" class="hint"></p>
+      <label id="batchChoice" class="inline" hidden>Download part
+        <select id="batch"></select>
+      </label>
       <div class="tablewrap"><table id="preview"></table></div>
       <p><button type="button" id="download">Download Xray CSV</button></p>
-      <p class="hint">In Jira: Apps &rarr; Xray &rarr; Test Case Importer &rarr; CSV. Map Test ID, Summary and Test Type, plus the Xray Test Step fields Action, Data and Expected Result. Xray imports up to 1000 issues per run.</p>
+      <p class="hint">In Jira: Apps &rarr; Xray &rarr; Test Case Importer &rarr; CSV. Map Test ID, Summary and Test Type, plus the Xray Test Step fields Action, Data and Expected Result. Import each numbered part separately; start with a small sample to verify your instance's mapping.</p>
     </section>
 
     <p id="error" role="alert" class="error" hidden></p>
@@ -60,7 +67,7 @@
       <h3>How do I import test cases from Excel into Xray?</h3>
       <p>Save your sheet as CSV (or paste the cells), load it here, match the columns, and download the result. Then open Jira, go to Apps, Xray, Test Case Importer, and choose CSV. Map Test ID, Summary and Test Type, and map Action, Data and Expected Result to the Xray test step fields.</p>
       <h3>What should my spreadsheet look like?</h3>
-      <p>One row per step. Put the test name on the first row of each test and leave it blank on the following step rows. Columns can be in any order and named anything; you pick them in step 2.</p>
+      <p>One row per step. Put the test name on the first row of each test and leave it blank on the following step rows. Repeating a name on a later row starts a new test, even if the name is the same. Columns can be in any order and named anything; you pick them in step 2.</p>
       <h3>Is my data uploaded anywhere?</h3>
       <p>No. The conversion runs entirely in your browser and nothing is sent to a server. Do not paste anything your company forbids you from handling outside approved tools.</p>
       <h3>Does it work with Zephyr?</h3>

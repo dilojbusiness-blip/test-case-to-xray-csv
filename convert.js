@@ -78,6 +78,21 @@ export function groupTests(dataRows, mapping) {
 
 export const OUTPUT_HEADERS = ["Test ID", "Summary", "Test Type", "Labels", "Priority", "Description", "Action", "Data", "Expected Result"];
 
+// Zephyr's importer has its own column-mapping step, so these names only need to be recognisable.
+export const ZEPHYR_HEADERS = ["Name", "Objective", "Priority", "Labels", "Step", "Test Data", "Expected Result"];
+
+export function buildZephyrRows(tests) {
+  const rows = [];
+  for (const t of tests) {
+    const steps = t.steps.length ? t.steps : [{ action: "", data: "", expected: "" }];
+    steps.forEach((s, i) => {
+      const first = i === 0;
+      rows.push([first ? t.name : "", first ? t.description : "", first ? t.priority : "", first ? t.labels : "", s.action, s.data, s.expected]);
+    });
+  }
+  return rows;
+}
+
 export function buildXrayRows(tests, testType = "Manual") {
   const rows = [];
   for (const t of tests) {

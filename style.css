@@ -25,4 +25,5 @@ th { position: sticky; top: 0; background: Canvas; }
 .faq { margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1rem; }
 .faq h3 { font-size: 1rem; margin: 1rem 0 .25rem; }
 .faq p { margin: 0 0 .5rem; opacity: .85; }
+.faq pre { overflow: auto; padding: .5rem; border: 1px solid var(--border); border-radius: .4rem; font-size: .8rem; }
 footer { max-width: 56rem; margin: 0 auto; padding: 1rem; font-size: .8rem; opacity: .7; }

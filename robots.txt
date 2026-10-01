@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://dilojbusiness-blip.github.io/test-case-to-xray-csv/sitemap.xml

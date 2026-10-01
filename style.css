@@ -15,6 +15,8 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px s
 .mapping { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .75rem; margin-bottom: 1rem; }
 .mapping label, .inline { display: flex; flex-direction: column; gap: .2rem; font-size: .9rem; }
 .inline { display: inline-flex; margin-right: 1rem; }
+.mapping label.check { flex-direction: row; align-items: center; gap: .5rem; }
+code { font-size: .9em; }
 select, input[type=text], #testType { font: inherit; padding: .35rem; }
 .tablewrap { overflow: auto; max-height: 22rem; border: 1px solid var(--border); border-radius: .4rem; }
 table { border-collapse: collapse; width: 100%; font-size: .85rem; }

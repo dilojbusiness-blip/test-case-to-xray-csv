@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gherkin Feature File to Xray / Zephyr CSV Converter (Free, Private)</title>
+  <meta name="description" content="Paste or drop a Gherkin .feature file and download a CSV for Xray's Test Case Importer or Zephyr Scale. Scenario Outlines are expanded. Runs in your browser; nothing is uploaded.">
+  <link rel="canonical" href="https://dilojbusiness-blip.github.io/test-case-to-xray-csv/gherkin-to-csv/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Gherkin Feature File to Xray / Zephyr CSV">
+  <meta property="og:description" content="Turn a Gherkin .feature file into a Jira test import CSV. Free, private, runs in your browser.">
+  <meta property="og:url" content="https://dilojbusiness-blip.github.io/test-case-to-xray-csv/gherkin-to-csv/">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b5fff'/%3E%3Cpath d='M8 17l5 5 11-12' stroke='white' stroke-width='3.5' fill='none'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <main>
+    <h1>Gherkin Feature File to Xray / Zephyr CSV</h1>
+    <p class="lead">Turn a Gherkin <code>.feature</code> file into a CSV for Xray's Test Case Importer or Zephyr Scale. Everything runs in your browser. Your file is never uploaded. See also the <a href="../">spreadsheet to Xray CSV converter</a>.</p>
+
+    <section aria-labelledby="h-load">
+      <h2 id="h-load">1. Load your feature file</h2>
+      <label class="drop" id="drop" for="file">
+        <span>Drop a <b>.feature</b> file here, or click to choose</span>
+        <input type="file" id="file" accept=".feature,.txt,text/plain">
+      </label>
+      <p class="hint">Or paste the text:</p>
+      <textarea id="source" rows="10" placeholder="Feature: ..." spellcheck="false"></textarea>
+      <p><button type="button" id="loadSample" class="secondary">Try sample data</button></p>
+    </section>
+
+    <section id="step2" hidden aria-labelledby="h-out">
+      <h2 id="h-out">2. Choose options, check and download</h2>
+      <div class="mapping">
+        <label>Output for
+          <select id="outFormat"><option value="xray">Xray (Test Case Importer)</option><option value="zephyr">Zephyr Scale (not yet verified)</option></select>
+        </label>
+        <label>Steps
+          <select id="mode"><option value="each">Every Gherkin step is a test step</option><option value="then">Then steps become Expected Result of the step before</option></select>
+        </label>
+        <label>Delimiter
+          <select id="outDelim"><option value=",">Comma ,</option><option value=";">Semicolon ;</option></select>
+        </label>
+        <label class="check"><input type="checkbox" id="expand" checked> Expand Scenario Outlines into one test per Examples row</label>
+        <label class="check"><input type="checkbox" id="background" checked> Add Background steps to every test</label>
+      </div>
+      <p id="summary" role="status"></p>
+      <ul id="warnings" class="warnings"></ul>
+      <div class="tablewrap"><table id="preview"></table></div>
+      <p><button type="button" id="download">Download CSV</button></p>
+      <p class="hint">Tags become labels separated by <code>;</code>, so choose <code>;</code> as the list value delimiter in Xray's Setup step. In Jira: Apps &rarr; Xray &rarr; Test Case Importer &rarr; CSV, then map Test ID, Summary, Test Type and the Xray test step fields Action, Data and Expected Result.</p>
+    </section>
+
+    <p id="error" role="alert" class="error" hidden></p>
+
+    <section class="faq" aria-labelledby="h-faq">
+      <h2 id="h-faq">Questions</h2>
+      <h3>How is a feature file turned into test cases?</h3>
+      <p>Each Scenario becomes one test. Its Given, When, Then, And and But lines become test steps. Data tables and docstrings under a step go into the Data column. The Feature name is used as the description and tags become labels.</p>
+      <h3>What happens to Scenario Outlines?</h3>
+      <p>By default each row of the Examples table becomes its own test, with the <code>&lt;placeholders&gt;</code> replaced by the values. Untick the option to export the outline once, unchanged.</p>
+      <h3>Is my data uploaded anywhere?</h3>
+      <p>No. The conversion runs entirely in your browser and nothing is sent to a server.</p>
+      <h3>Does it replace Xray's own Gherkin import?</h3>
+      <p>No. Xray can import feature files as Cucumber tests. This tool is for teams that want plain manual tests with steps, or that use Zephyr, from feature files.</p>
+      <h3>Is the Zephyr output verified?</h3>
+      <p>Not yet. It is experimental and follows Zephyr's documented CSV fields. Try a small batch first.</p>
+    </section>
+  </main>
+  <footer>Not affiliated with Atlassian, Xray, SmartBear or Cucumber. Always import a small batch first to check the mapping.</footer>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
